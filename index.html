@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aeris — Weather, beautifully simplified</title>
+<meta name="description" content="Live conditions, hourly and 7-day forecasts, rain probability, UV, wind, sunrise and sunset — weather, beautifully simplified.">
+<meta property="og:title" content="Aeris — Weather, beautifully simplified">
+<meta property="og:description" content="Live weather, hourly and 7-day forecasts, rain probability, UV index, sunrise & sunset. Clean in light and dark.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="banner.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root, [data-theme="dark"] { --bg:#0b1020; --bg2:#141b36; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.13); --text:#f4f6ff; --muted:#a6aed0; --accent:#ffb454; --accent2:#6ec3ff; --chip:rgba(255,255,255,.09); }
+  [data-theme="light"] { --bg:#eef3fb; --bg2:#dcebfb; --card:rgba(255,255,255,.75); --line:rgba(23,42,84,.14); --text:#152238; --muted:#5a6b8c; --accent:#e07f13; --accent2:#1668c4; --chip:rgba(21,34,56,.07); }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--text); background: linear-gradient(165deg, var(--bg) 0%, var(--bg2) 100%); background-attachment: fixed; min-height: 100vh; transition: background .4s, color .4s; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 56px; }
+  header { display:flex; align-items:flex-start; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 32px; margin: 2px 0 0; }
+  h1 .dot { color: var(--accent); }
+  .tag { color: var(--muted); margin: 2px 0 0; font-size: 14.5px; }
+  .tools { display:flex; gap:8px; }
+  .tbtn { background: var(--card); border:1px solid var(--line); color: var(--text); border-radius: 999px; padding: 8px 13px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .search { position: relative; margin-top: 18px; display:flex; gap: 8px; }
+  .search input { flex:1; background: var(--card); border:1px solid var(--line); color: var(--text); border-radius: 12px; padding: 13px 15px; font-size: 16px; min-width: 0; }
+  .search input::placeholder { color: var(--muted); }
+  .suggest { position:absolute; left:0; right:0; top: calc(100% + 6px); background: var(--bg2); border:1px solid var(--line); border-radius: 12px; overflow:hidden; z-index: 9; display:none; }
+  .suggest div { padding: 11px 14px; cursor:pointer; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .suggest div:last-child { border-bottom: 0; }
+  .suggest small { color: var(--muted); margin-left: 6px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin-top: 16px; backdrop-filter: blur(6px); }
+  .now { display:flex; align-items:center; gap: 18px; flex-wrap: wrap; }
+  .now .icon { width: 92px; height: 92px; color: var(--accent); flex: none; }
+  .now .temp { font-size: 64px; font-weight: 800; line-height: 1; }
+  .now .cond { font-size: 18px; margin-top: 4px; }
+  .now .feels { color: var(--muted); margin-top: 2px; }
+  .place { font-size: 15px; color: var(--muted); }
+  .place b { color: var(--text); font-size: 17px; }
+  .alerts { display:none; margin-top: 16px; }
+  .alert { border:1px solid #e0564b; background: rgba(224,86,75,.14); border-radius: 12px; padding: 11px 14px; font-size: 14.5px; margin-bottom: 8px; line-height: 1.5; }
+  .alert.warn { border-color: var(--accent); background: rgba(255,180,84,.12); }
+  h3 { margin: 2px 0 12px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+  .hours { display:flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+  .hour { flex: none; width: 74px; text-align:center; background: var(--chip); border-radius: 12px; padding: 10px 4px; }
+  .hour .h { color: var(--muted); font-size: 12px; }
+  .hour svg { width: 26px; height: 26px; margin: 5px 0 2px; color: var(--accent); }
+  .hour .t { font-weight: 700; font-size: 15.5px; }
+  .hour .r { color: var(--accent2); font-size: 12px; margin-top: 2px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { background: var(--chip); border-radius: 12px; padding: 13px 14px; }
+  .stat .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat .v { font-size: 21px; font-weight: 700; margin-top: 3px; }
+  .stat .s { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .day { display:grid; grid-template-columns: 86px 30px 52px 1fr 86px; align-items:center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .day:last-child { border-bottom: 0; }
+  .day svg { width: 24px; height: 24px; color: var(--accent); }
+  .day .r { color: var(--accent2); font-size: 12.5px; }
+  .day .mm { color: var(--muted); text-align: right; }
+  .day .mm b { color: var(--text); }
+  .bar { position: relative; height: 6px; background: var(--chip); border-radius: 3px; }
+  .bar i { position:absolute; top:0; bottom:0; border-radius: 3px; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .sun { display:flex; justify-content: space-between; gap: 10px; text-align:center; }
+  .sun .cell { flex:1; background: var(--chip); border-radius: 12px; padding: 13px 6px; }
+  .sun .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .sun .v { font-size: 19px; font-weight: 700; margin-top: 3px; }
+  .foot { color: var(--muted); font-size: 12.5px; line-height: 1.65; margin-top: 20px; }
+  .err { color: #ff8a7a; }
+  @media (max-width: 520px) { .now .temp { font-size: 52px; } .day { grid-template-columns: 70px 26px 44px 1fr 74px; font-size: 13.5px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Aeris<span class="dot">.</span></h1>
+      <p class="tag">Weather, beautifully simplified.</p>
+    </div>
+    <div class="tools">
+      <button class="tbtn" id="btnUnits">°C</button>
+      <button class="tbtn" id="btnTheme">☀ / ☾</button>
+    </div>
+  </header>
+
+  <div class="search">
+    <input type="text" id="q" placeholder="Search a city — Lagos, London, New York, Tokyo…" autocomplete="off">
+    <button class="tbtn" id="btnLoc" title="Use my location">◎ My location</button>
+    <div class="suggest" id="suggest"></div>
+  </div>
+
+  <div class="alerts" id="alerts"></div>
+
+  <div class="card" id="nowCard">
+    <div class="place" id="placeLine">Loading weather…</div>
+    <div class="now" style="margin-top:10px">
+      <div class="icon" id="nowIcon"></div>
+      <div>
+        <div class="temp" id="nowTemp">–</div>
+        <div class="cond" id="nowCond"></div>
+        <div class="feels" id="nowFeels"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Next 24 hours</h3>
+    <div class="hours" id="hours"></div>
+  </div>
+
+  <div class="card">
+    <h3>Right now, in detail</h3>
+    <div class="grid">
+      <div class="stat"><div class="k">Rain chance</div><div class="v" id="stRain">–</div><div class="s" id="stRainS"></div></div>
+      <div class="stat"><div class="k">Humidity</div><div class="v" id="stHum">–</div><div class="s" id="stHumS"></div></div>
+      <div class="stat"><div class="k">Wind</div><div class="v" id="stWind">–</div><div class="s" id="stWindS"></div></div>
+      <div class="stat"><div class="k">UV index</div><div class="v" id="stUV">–</div><div class="s" id="stUVS"></div></div>
+    </div>
+    <div class="sun" style="margin-top:10px">
+      <div class="cell"><div class="k">☀ Sunrise</div><div class="v" id="sunUp">–</div></div>
+      <div class="cell"><div class="k">☾ Sunset</div><div class="v" id="sunDown">–</div></div>
+      <div class="cell"><div class="k">Day length</div><div class="v" id="dayLen">–</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>7-day forecast</h3>
+    <div id="days"></div>
+  </div>
+
+  <p class="foot" id="footNote">Data: Open-Meteo (free, multi-model weather data), refreshed live for the place shown; times are that place's local time. Advisories above are generated from the forecast itself — they are <b>not</b> official warnings; for official alerts, check your national weather service (Nigeria: NiMet). Built by Bangees.</p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const store = { get theme() { return localStorage.getItem("aeris-theme"); }, set theme(v) { localStorage.setItem("aeris-theme", v); },
+                get units() { return localStorage.getItem("aeris-units") || "c"; }, set units(v) { localStorage.setItem("aeris-units", v); } };
+document.documentElement.dataset.theme = store.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+$("btnTheme").onclick = () => { const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = t; store.theme = t; };
+$("btnUnits").onclick = () => { store.units = store.units === "c" ? "f" : "c"; $("btnUnits").textContent = store.units === "c" ? "°C" : "°F"; if (lastData) render(lastData); };
+$("btnUnits").textContent = store.units === "c" ? "°C" : "°F";
+
+const T = (c) => store.units === "c" ? Math.round(c) + "°" : Math.round(c * 9 / 5 + 32) + "°";
+const WIND = (k) => store.units === "c" ? Math.round(k) + " km/h" : Math.round(k * 0.621) + " mph";
+const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const dirName = (deg) => DIRS[Math.round(deg / 22.5) % 16];
+
+const CODES = {
+  0:["Clear sky","clear"], 1:["Mainly clear","clear"], 2:["Partly cloudy","partly"], 3:["Overcast","cloudy"],
+  45:["Fog","fog"], 48:["Rime fog","fog"], 51:["Light drizzle","drizzle"], 53:["Drizzle","drizzle"], 55:["Dense drizzle","drizzle"],
+  56:["Freezing drizzle","drizzle"], 57:["Freezing drizzle","drizzle"], 61:["Light rain","rain"], 63:["Rain","rain"], 65:["Heavy rain","rain"],
+  66:["Freezing rain","rain"], 67:["Freezing rain","rain"], 71:["Light snow","snow"], 73:["Snow","snow"], 75:["Heavy snow","snow"], 77:["Snow grains","snow"],
+  80:["Light showers","showers"], 81:["Showers","showers"], 82:["Violent showers","showers"], 85:["Snow showers","snow"], 86:["Snow showers","snow"],
+  95:["Thunderstorm","thunder"], 96:["Thunderstorm, hail","thunder"], 99:["Thunderstorm, hail","thunder"]
+};
+function icon(kind, night) {
+  const sun = '<circle cx="32" cy="32" r="11"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M49 15l-4 4M19 45l-4 4"/>';
+  const moon = '<path d="M44 38a15 15 0 1 1-18-20 12 12 0 0 0 18 20z"/>';
+  const cloud = '<path d="M20 44a8 8 0 1 1 1.6-15.8A12 12 0 0 1 44 32a7 7 0 0 1-2 13.6z"/>';
+  const drops = '<path d="M24 50l-2 5M34 50l-2 5M44 50l-2 5"/>';
+  const bolt = '<path d="M33 44l-6 10h6l-3 8 10-12h-6l3-6z"/>';
+  const flakes = '<path d="M24 50v6M21 53h6M34 50v6M31 53h6M44 50v6M41 53h6"/>';
+  const fogL = '<path d="M16 48h32M20 55h24"/>';
+  const body = { clear: night ? moon : sun, partly: (night ? moon : sun) + cloud, cloudy: cloud, fog: cloud + fogL, drizzle: cloud + drops, rain: cloud + drops, showers: cloud + drops, snow: cloud + flakes, thunder: cloud + bolt }[kind] || cloud;
+  return `<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+}
+const uvWord = (uv) => uv < 3 ? "Low — no protection needed" : uv < 6 ? "Moderate — shade at midday" : uv < 8 ? "High — sunscreen advised" : uv < 11 ? "Very high — protect skin & eyes" : "Extreme — avoid midday sun";
+const esc = (s) => s.replace(/</g, "&lt;");
+
+let lastData = null, placeName = "Lagos, Nigeria";
+
+async function load(lat, lon, name) {
+  placeName = name;
+  $("placeLine").innerHTML = `<b>${esc(name)}</b> · loading…`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m` +
+    `&hourly=temperature_2m,precipitation_probability,weather_code,uv_index,is_day` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,wind_gusts_10m_max` +
+    `&timezone=auto&forecast_days=7`;
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.error) throw new Error(d.reason || "API error");
+    lastData = d;
+    localStorage.setItem("aeris-cache", JSON.stringify({ d, name, at: Date.now() }));
+    render(d);
+  } catch (e) {
+    const cache = localStorage.getItem("aeris-cache");
+    if (cache) { const c = JSON.parse(cache); lastData = c.d; placeName = c.name; render(c.d); $("placeLine").innerHTML += ` · <span class="err">live update failed — showing the last good data from ${new Date(c.at).toLocaleTimeString()}</span>`; }
+    else $("placeLine").innerHTML = `<b>${esc(name)}</b> · <span class="err">couldn't load weather right now — the data service may be busy. Reload to retry.</span>`;
+  }
+}
+
+function render(d) {
+  const c = d.current, daily = d.daily, hourly = d.hourly;
+  const [condLabel, kind] = CODES[c.weather_code] || ["—", "cloudy"];
+  const night = c.is_day === 0;
+  $("placeLine").innerHTML = `<b>${esc(placeName)}</b> · ${new Date(c.time).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })} local`;
+  $("nowIcon").innerHTML = icon(kind, night);
+  $("nowTemp").textContent = T(c.temperature_2m);
+  $("nowCond").textContent = condLabel;
+  $("nowFeels").textContent = `Feels like ${T(c.apparent_temperature)} · High ${T(daily.temperature_2m_max[0])} / Low ${T(daily.temperature_2m_min[0])}`;
+
+  // current hour index
+  const hh = hourly.time.findIndex(t => t >= c.time.slice(0, 13) + ":00");
+  const hi = hh === -1 ? 0 : hh;
+  const rainNow = hourly.precipitation_probability[hi];
+  const uvNow = hourly.uv_index[hi];
+
+  $("stRain").textContent = rainNow == null ? "—" : rainNow + "%";
+  $("stRainS").textContent = `Today's max: ${daily.precipitation_probability_max[0] ?? "—"}% · fallen: ${c.precipitation ?? 0} mm`;
+  $("stHum").textContent = c.relative_humidity_2m + "%";
+  $("stHumS").textContent = c.relative_humidity_2m >= 80 ? "Very humid — heavy air" : c.relative_humidity_2m >= 60 ? "Humid" : c.relative_humidity_2m >= 35 ? "Comfortable" : "Dry air";
+  $("stWind").textContent = WIND(c.wind_speed_10m);
+  $("stWindS").textContent = `From ${dirName(c.wind_direction_10m)} · gusts ${WIND(c.wind_gusts_10m)}`;
+  $("stUV").textContent = uvNow == null ? "—" : uvNow.toFixed(0);
+  $("stUVS").textContent = (uvNow == null ? "" : uvWord(uvNow) + " · ") + `Today's max: ${daily.uv_index_max[0]?.toFixed(0) ?? "—"}`;
+
+  const up = new Date(daily.sunrise[0]), down = new Date(daily.sunset[0]);
+  $("sunUp").textContent = up.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  $("sunDown").textContent = down.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const mins = Math.round((down - up) / 60000);
+  $("dayLen").textContent = Math.floor(mins / 60) + "h " + (mins % 60) + "m";
+
+  // next 24 hours
+  $("hours").innerHTML = hourly.time.slice(hi, hi + 24).map((t, j) => {
+    const i = hi + j, [ , k] = CODES[hourly.weather_code[i]] || ["", "cloudy"];
+    const hr = new Date(t);
+    return `<div class="hour"><div class="h">${j === 0 ? "Now" : hr.toLocaleTimeString([], { hour: "numeric" })}</div>${icon(k, hourly.is_day[i] === 0)}<div class="t">${T(hourly.temperature_2m[i])}</div><div class="r">${hourly.precipitation_probability[i] == null ? "" : "💧" + hourly.precipitation_probability[i] + "%"}</div></div>`;
+  }).join("");
+
+  // 7 days
+  const wkMin = Math.min(...daily.temperature_2m_min), wkMax = Math.max(...daily.temperature_2m_max);
+  $("days").innerHTML = daily.time.map((t, i) => {
+    const [ , k] = CODES[daily.weather_code[i]] || ["", "cloudy"];
+    const left = ((daily.temperature_2m_min[i] - wkMin) / (wkMax - wkMin || 1)) * 100;
+    const width = Math.max(8, ((daily.temperature_2m_max[i] - daily.temperature_2m_min[i]) / (wkMax - wkMin || 1)) * 100);
+    const label = i === 0 ? "Today" : new Date(t + "T12:00").toLocaleDateString([], { weekday: "short" });
+    return `<div class="day"><div>${label}</div>${icon(k, false)}<div class="r">${daily.precipitation_probability_max[i] == null ? "" : "💧" + daily.precipitation_probability_max[i] + "%"}</div><div class="bar"><i style="left:${left}%;width:${width}%"></i></div><div class="mm">${T(daily.temperature_2m_min[i])} · <b>${T(daily.temperature_2m_max[i])}</b></div></div>`;
+  }).join("");
+
+  // advisories (derived from the forecast, not official warnings)
+  const adv = [];
+  const todayCode = daily.weather_code[0];
+  if ([95, 96, 99].includes(todayCode)) adv.push(["alert", "⛈ <b>Thunderstorms expected today.</b> Stay indoors during lightning and keep away from open water and tall trees."]);
+  if ((daily.precipitation_probability_max[0] ?? 0) >= 70) adv.push(["alert warn", `🌧 <b>Heavy rain likely today</b> — ${daily.precipitation_probability_max[0]}% chance. Plan for wet roads and possible local flooding.`]);
+  if ((daily.uv_index_max[0] ?? 0) >= 8) adv.push(["alert warn", `☀ <b>Very high UV today (max ${daily.uv_index_max[0].toFixed(0)}).</b> Sunscreen, shade at midday, protect your eyes.`]);
+  if ((daily.wind_gusts_10m_max[0] ?? 0) >= 50) adv.push(["alert warn", `🌬 <b>Strong wind gusts today</b> — up to ${WIND(daily.wind_gusts_10m_max[0])}. Secure loose items outdoors.`]);
+  if (c.apparent_temperature >= 40) adv.push(["alert warn", `🥵 <b>Extreme heat — feels like ${T(c.apparent_temperature)}.</b> Drink water, rest in shade, check on the elderly.`]);
+  $("alerts").style.display = adv.length ? "block" : "none";
+  $("alerts").innerHTML = adv.map(([cls, html]) => `<div class="${cls}">${html}</div>`).join("");
+}
+
+// search
+let searchTimer = null;
+$("q").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  const v = $("q").value.trim();
+  if (v.length < 2) { $("suggest").style.display = "none"; return; }
+  searchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=6&language=en&format=json`);
+      const d = await r.json();
+      if (!d.results?.length) { $("suggest").style.display = "none"; return; }
+      $("suggest").innerHTML = d.results.map((x, i) => `<div data-i="${i}">${esc(x.name)}<small>${esc([x.admin1, x.country].filter(Boolean).join(", "))}</small></div>`).join("");
+      $("suggest").style.display = "block";
+      $("suggest").querySelectorAll("div").forEach(el => el.onclick = () => {
+        const x = d.results[+el.dataset.i];
+        $("suggest").style.display = "none"; $("q").value = x.name;
+        load(x.latitude, x.longitude, [x.name, x.country].filter(Boolean).join(", "));
+      });
+    } catch (e) { $("suggest").style.display = "none"; }
+  }, 300);
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".search")) $("suggest").style.display = "none"; });
+
+$("btnLoc").onclick = () => {
+  if (!navigator.geolocation) { $("placeLine").innerHTML = '<span class="err">This browser has no geolocation.</span>'; return; }
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
+    let name = "Current location";
+    try {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      const d = await r.json();
+      name = [d.city || d.locality, d.countryName].filter(Boolean).join(", ") || name;
+    } catch (e) { /* keep generic name */ }
+    load(latitude, longitude, name);
+  }, () => { $("placeLine").innerHTML = '<span class="err">Location permission was not given — search for a city instead.</span>'; });
+};
+
+load(6.4541, 3.3947, "Lagos, Nigeria");
+</script>
+</body>
+</html>
