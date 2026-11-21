@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Aeris</string>
+    <string name="title_activity_main">Aeris</string>
+    <string name="package_name">ai.bangees.aeris</string>
+    <string name="custom_url_scheme">ai.bangees.aeris</string>
+</resources>
